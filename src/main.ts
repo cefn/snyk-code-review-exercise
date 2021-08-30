@@ -1,19 +1,15 @@
-import * as assert from 'assert';
 import * as getPort from 'get-port';
-import { createApp } from './app';
+import { createApp, hostApp } from './app';
 
 async function main() {
   // Initialise the server framework and routing
   const app = createApp();
 
-  const p = await getPort({ port: 3000 });
-  const server = app.listen(p, 'localhost', () => {
-    const addr = server.address();
-    assert(addr && typeof addr === 'object');
+  const availablePort = await getPort({ port: 3000 });
+  const hostInfo = await hostApp(app, availablePort);
 
-    const { address, port } = addr;
-    console.info(`Server listening on http://${address}:${port}`);
-  });
+  const { server } = hostInfo;
+  console.info(`Server listening on ${JSON.stringify(server.address())}`);
 }
 
 main();

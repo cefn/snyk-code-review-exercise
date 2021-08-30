@@ -1,0 +1,31 @@
+[
+    {
+        "scope": "https://registry.npmjs.org:443",
+        "method": "GET",
+        "path": "/nothingburger42",
+        "body": "",
+        "status": 404,
+        "response": {
+            "error": "Not found"
+        },
+        "rawHeaders": [
+            "Date",
+            "Mon, 30 Aug 2021 17:10:23 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "21",
+            "Connection",
+            "close",
+            "CF-Ray",
+            "686fa1da2a57407e-LHR",
+            "Vary",
+            "Accept-Encoding",
+            "Expect-CT",
+            "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+            "Server",
+            "cloudflare"
+        ],
+        "responseIsBinary": false
+    }
+]

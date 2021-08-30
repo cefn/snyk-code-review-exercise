@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "nodemon --watch src --ext .ts --exec \"$(npm bin)/ts-node ./src/main.ts\"",
-    "test": "jest",
+    "test": "jest --collectCoverage --collectCoverageFrom=./src/**/*.ts",
     "lint": "eslint '{src,test}/**/*.ts'"
   },
   "dependencies": {

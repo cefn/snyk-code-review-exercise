@@ -17,7 +17,7 @@ if (!process.env['NOCK_BACK_MODE']) {
 export async function nockRecord(testId: string): Promise<{ nockDone: () => void }> {
   return await back(`${testId}.json`, {
     // don't block localhost
-    after: () => nock.enableNetConnect('localhost'),
+    after: () => nock.enableNetConnect(/localhost/),
     // forget localhost recordings
     afterRecord: (outputs) => outputs.filter((o) => !o.scope.match(/localhost/)),
   });
