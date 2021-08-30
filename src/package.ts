@@ -1,26 +1,9 @@
-import { RequestHandler } from 'express';
 import got from 'got';
 import { NPMDependencies, NPMPackage } from './types';
 import { maxSatisfying } from 'semver';
 import pLimit from 'p-limit';
 
 const connectionPool = pLimit(32);
-
-/**
- * Attempts to retrieve package data from the npm registry and return it
- */
-export const getPackage: RequestHandler<{ name: string; version: string }> = async function (req, res, next) {
-  const { name, version } = req.params;
-  try {
-    const dependencies = await getDependencies(name, version);
-    if (dependencies) {
-      return res.status(200).json({ name, version, dependencies });
-    }
-    return res.status(404).json({ message: `No information available for package ${name} with version ${version}` });
-  } catch (error) {
-    return next(error);
-  }
-};
 
 export async function getNpmData(name: string): Promise<NPMPackage | null> {
   const request = connectionPool(() => got(`https://registry.npmjs.org/${name}`, { retry: 0, throwHttpErrors: false }));
@@ -47,9 +30,10 @@ export async function getDependencies(name: string, version: string): Promise<NP
 }
 
 export async function getDependenciesDeep(name: string, version: string): Promise<NPMDependencies | null> {
+  // TODO unroll to avoid duplicated call for each package to getNpmData() unless memoized
   const dependencies = await getDependencies(name, version);
   if (dependencies) {
-    // traverse list
+    // traverse list, triggering retrievals in parallel (limited by connectionPool)
     const dependencyRecords = await Promise.all(
       Object.entries(dependencies).map(async ([ desiredName, desiredVersion ]) => {
         const desiredEntry = await getNpmData(desiredName);
@@ -65,7 +49,7 @@ export async function getDependenciesDeep(name: string, version: string): Promis
             };
           }
         }
-        throw new Error('Package has non-existent dependency');
+        throw new Error(`Package ${name} has non-existent dependency ${desiredName}:${desiredVersion}`);
       })
     );
     // transform list to map

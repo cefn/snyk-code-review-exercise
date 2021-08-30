@@ -1,6 +1,7 @@
 import got from 'got';
 import { Server } from 'http';
 import { createApp } from '../src/app';
+import { nockRecord } from './util';
 
 describe('/package/:name/:version endpoint', () => {
   let server: Server;
@@ -27,6 +28,8 @@ describe('/package/:name/:version endpoint', () => {
   });
 
   it('responds', async () => {
+    const { nockDone } = await nockRecord('localhost_package_present');
+
     const packageName = 'react';
     const packageVersion = '16.13.0';
 
@@ -43,5 +46,6 @@ describe('/package/:name/:version endpoint', () => {
         "prop-types": "^15.6.2",
       }
     `);
+    nockDone();
   });
 });
