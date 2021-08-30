@@ -1,44 +1,79 @@
-import * as assert from "assert";
-import got from 'got';
-import { Server } from 'http';
-import { createApp } from '../src/app';
+import * as assert from 'assert';
+import { nockRecord } from './util';
+import { getDependencies, getDependenciesDeep, getNPMPackage } from '../src/package';
 
-describe('/package/:name/:version endpoint', () => {
-  let server: Server;
-  let port: number;
+describe('NPM retrieval functions', () => {
+  describe('getNpmData()', () => {
+    it('retrieves data if package version exists', async () => {
+      const { nockDone } = await nockRecord('getNpmData_present');
+      const data = await getNPMPackage('@lauf/store-react');
+      assert(data !== null, 'Should retrieve data');
+      expect(data.name).toBe('@lauf/store-react');
+      expect((data as unknown as { author: { name: string } })?.author?.name).toBe('Cefn Hoile');
+      nockDone();
+    });
 
-  beforeAll((done) => {
-    server = createApp().listen(0, () => {
-      const addr = server.address();
-      if (addr && typeof addr === "object") {
-        port = addr.port;
-        done();
-      } else {
-        done(new Error("Unexpected address ${addr} for server"));
-      }
+    it('returns null for non-existent package', async () => {
+      const { nockDone } = await nockRecord('getNpmData_absent');
+      const data = await getNPMPackage('nothingburger42');
+      expect(data).toBe(null);
+      nockDone();
     });
   });
 
-  afterAll((done) => {
-    server.close(done);
+  describe('getDependencies()', () => {
+    it('retrieves data if package version exists', async () => {
+      const { nockDone } = await nockRecord('getDependencies_present');
+      const npmPackage = await getNPMPackage('@lauf/store-react');
+      assert(npmPackage !== null, 'Should retrieve data');
+      const result = await getDependencies(npmPackage, '1.0.1');
+      expect(result).toMatchInlineSnapshot(`
+        Object {
+          "@lauf/store": "^1.0.1",
+        }
+      `);
+      nockDone();
+    });
+
+    it('returns null for non-existent package version', async () => {
+      const { nockDone } = await nockRecord('getDependencies_absent');
+      const npmPackage = await getNPMPackage('@lauf/store-react');
+      assert(npmPackage !== null, 'Should retrieve data');
+      const result = await getDependencies(npmPackage, '42.42.42');
+      expect(result).toBe(null);
+      nockDone();
+    });
   });
 
-  it('responds', async () => {
-    const packageName = 'react';
-    const packageVersion = '16.13.0';
+  describe('getDependenciesDeep()', () => {
+    it('retrieves data if package version exists', async () => {
+      const { nockDone } = await nockRecord('getDependenciesDeep_present');
+      const npmPackage = await getNPMPackage('@lauf/store-react');
+      assert(npmPackage !== null, 'Should retrieve data');
+      const result = await getDependenciesDeep(npmPackage, '1.0.1');
+      expect(result).toMatchInlineSnapshot(`
+        Object {
+          "@lauf/store": Object {
+            "dependencies": Object {
+              "immer": Object {
+                "dependencies": Object {},
+                "version": "8.0.4",
+              },
+            },
+            "version": "1.0.1",
+          },
+        }
+      `);
+      nockDone();
+    });
 
-    const res: any = await got(
-      `http://localhost:${port}/package/${packageName}/${packageVersion}`
-    );
-    const json = JSON.parse(res.body);
-
-    expect(res.statusCode).toEqual(200);
-    expect(json.name).toEqual(packageName);
-    expect(json.version).toEqual(packageVersion);
-    expect(json.dependencies).toEqual({
-      'loose-envify': '^1.1.0',
-      'object-assign': '^4.1.1',
-      'prop-types': '^15.6.2',
+    it('returns null for non-existent package version', async () => {
+      const { nockDone } = await nockRecord('getDependencies_absent');
+      const npmPackage = await getNPMPackage('@lauf/store-react');
+      assert(npmPackage !== null, 'Should retrieve data');
+      const result = await getDependenciesDeep(npmPackage, '42.42.42');
+      expect(result).toBe(null);
+      nockDone();
     });
   });
 });
